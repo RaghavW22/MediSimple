@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediSimple — Health Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="css/dashboard.css" />
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="db-nav">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">Medi<span>Simple</span></a>
+      <div class="nav-right">
+        <div style="text-align: right; line-height: 1.2;">
+          <div class="patient-badge" id="navPatientName" style="margin-bottom: 4px;">👤 MediSimple User</div>
+          <div style="font-size: 11px; color: var(--text-muted);" id="navPatientAddress"></div>
+        </div>
+        <a href="index.html" class="btn-back" onclick="logout()">Logout</a>
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle Dark Mode">🌙</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- DASHBOARD HEADER -->
+  <header class="db-header">
+    <div class="db-header-content">
+      <div>
+        <div class="db-tag">✦ Health Intelligence Dashboard</div>
+        <h1 class="db-title">Your Health<br /><span class="gradient-text" id="headerPatientName">At a Glance</span></h1>
+        <p class="db-sub" id="headerSubText">Comprehensive breakdown of your latest lab results.</p>
+      </div>
+      <div class="db-score-widget">
+        <div class="score-ring" id="scoreRing">
+          <svg viewBox="0 0 120 120" class="ring-svg">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="#f0f0f0" stroke-width="10" />
+            <circle cx="60" cy="60" r="52" fill="none" stroke="url(#scoreGrad)" stroke-width="10"
+              stroke-dasharray="326.73" stroke-dashoffset="326.73" stroke-linecap="round" id="ringProgress"
+              transform="rotate(-90 60 60)" />
+            <defs>
+              <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#3b82f6" />
+                <stop offset="100%" stop-color="#8b5cf6" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="ring-inner">
+            <div class="ring-value" id="ringValue">0</div>
+            <div class="ring-label">Health Score</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- PDF UPLOAD STRIP -->
+  <section class="upload-strip" id="uploadStrip">
+    <div class="upload-strip-inner">
+      <div class="upload-strip-left">
+        <div class="upload-strip-icon">📄</div>
+        <div>
+          <div class="upload-strip-title">Upload Your Lab Report</div>
+          <div class="upload-strip-sub">Upload a PDF to extract real data via AI-powered NER</div>
+        </div>
+      </div>
+      <div class="upload-strip-right">
+        <label class="upload-strip-btn" for="pdfUploadInput" id="uploadLabel">
+          <span class="upload-strip-btn-icon">⬆</span> Choose PDF
+        </label>
+        <input type="file" id="pdfUploadInput" accept=".pdf" hidden />
+        <span class="upload-strip-filename" id="uploadFilename"></span>
+      </div>
+    </div>
+    <!-- Processing overlay -->
+    <div class="upload-processing hidden" id="uploadProcessing">
+      <div class="upload-processing-spinner"></div>
+      <span>Extracting text & running NER model…</span>
+    </div>
+    <!-- Status message -->
+    <div class="upload-status hidden" id="uploadStatus"></div>
+  </section>
+
+  <!-- METRICS OVERVIEW GRID -->
+  <section class="db-section">
+    <div class="section-head">
+      <h2>Lab Metrics Overview</h2>
+      <span class="section-tag" id="metricsCountTag">6 markers analyzed</span>
+    </div>
+    <div class="db-metrics-grid" id="dbMetricsGrid">
+      <!-- Populated by dashboard.js -->
+    </div>
+  </section>
+
+  <!-- CURRENT METRICS CHARTS — always visible -->
+  <section class="db-section" id="currentChartsSection">
+    <div class="section-head">
+      <h2>Health Analytics</h2>
+      <span class="section-tag">Charts</span>
+    </div>
+    <div id="currentChartsContainer"
+      style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px;">
+      <!-- Bar chart, doughnut, radar — always rendered from active data -->
+    </div>
+  </section>
+
+  <!-- PAST HISTORY LOG — collapsible -->
+  <section class="db-section" id="historyLogSection">
+    <div class="section-head">
+      <h2>Past Medical History</h2>
+      <span class="section-tag">Log</span>
+      <button class="history-toggle-btn" id="historyToggleBtn" title="Toggle past reports">▼ Show Records</button>
+    </div>
+    <div class="history-panel collapsed" id="historyPanel">
+      <div style="background:#fff; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 24px;">
+        <div id="historyLogList">
+          <p style="color:var(--text-secondary); font-size:14px;">No past history found. Upload reports to build your medical timeline.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTORY TREND CHARTS — shows only when history exists -->
+  <section class="db-section" id="chartsSection" style="display:none;">
+    <div class="section-head">
+      <h2>Health History Trends</h2>
+      <span class="section-tag">Interactive</span>
+    </div>
+    <div id="chartsContainer"
+      style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px;">
+    </div>
+  </section>
+
+
+
+    <!-- FOOTER -->
+  <footer class="db-footer">
+    <div class="footer-inner">
+      <div class="footer-logo">Medi<span>Simple</span></div>
+      <p>© 2025 MediSimple · Generated by AI</p>
+    </div>
+  </footer>
+
+  <!-- AI CHATBOT WIDGET -->
+  <button class="chatbot-trigger" id="chatbotTrigger">💬 Ask MediSimple</button>
+  
+  <div class="chatbot-widget" id="chatbotWidget">
+    <div class="chatbot-header">
+      <div class="chatbot-title">Medical Assistant</div>
+      <button class="chatbot-close" id="chatbotClose">&times;</button>
+    </div>
+    <div class="chatbot-body" id="chatbotBody">
+      <div class="chatbot-message bot">Hello! I'm your AI medical assistant. You can ask me questions about your most recent lab results.</div>
+    </div>
+    <div class="chatbot-input-area">
+      <input type="text" id="chatbotInput" placeholder="Ask about your results..." />
+      <button id="chatbotSend">Send</button>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="js/jargon-data.js"></script>
+  <script src="js/sample-report.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script>
+    function logout() {
+      localStorage.removeItem('ms_session');
+      sessionStorage.removeItem('ms_session');
+    }
+  </script>
+  <script src="js/theme.js"></script>
+</body>
+
+</html>
