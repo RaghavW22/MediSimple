@@ -3,20 +3,20 @@
 // Uploads PDF to Flask backend → stores result → redirects to dashboard.html
 
 (function () {
-  const API_BASE = 'http://localhost:5000';
+  const API_BASE = '';
 
-  const uploadZone    = document.getElementById('uploadZone');
-  const fileInput     = document.getElementById('fileInput');
-  const demoBtn       = document.getElementById('demoBtn');
+  const uploadZone = document.getElementById('uploadZone');
+  const fileInput = document.getElementById('fileInput');
+  const demoBtn = document.getElementById('demoBtn');
   const loaderOverlay = document.getElementById('loaderOverlay');
   const resultsSection = document.getElementById('resultsSection');
-  const metricsGrid   = document.getElementById('metricsGrid');
-  const aiTyping      = document.getElementById('aiTyping');
-  const voiceBtn      = document.getElementById('voiceBtn');
-  const scoreBar      = document.getElementById('scoreBar');
-  const scoreValue    = document.getElementById('scoreValue');
-  const scoreDesc     = document.getElementById('scoreDesc');
-  const downloadBtn   = document.getElementById('downloadBtn');
+  const metricsGrid = document.getElementById('metricsGrid');
+  const aiTyping = document.getElementById('aiTyping');
+  const voiceBtn = document.getElementById('voiceBtn');
+  const scoreBar = document.getElementById('scoreBar');
+  const scoreValue = document.getElementById('scoreValue');
+  const scoreDesc = document.getElementById('scoreDesc');
+  const downloadBtn = document.getElementById('downloadBtn');
 
   let activeReport = null;  // holds the data returned by the backend
 
@@ -50,7 +50,7 @@
     showLoader('Loading demo report…');
 
     try {
-      const res  = await fetch(`${API_BASE}/upload-demo`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}/upload-demo`, { method: 'POST' });
       const json = await res.json();
       if (json.success && json.data) {
         finishAndShow(json.data);
@@ -72,7 +72,7 @@
     formData.append('file', file);
 
     try {
-      const res  = await fetch(`${API_BASE}/upload`, { method: 'POST', body: formData });
+      const res = await fetch(`${API_BASE}/upload`, { method: 'POST', body: formData });
       const json = await res.json();
 
       if (json.success && json.data) {
@@ -96,7 +96,7 @@
     // Persist data so dashboard.html can read it
     try {
       sessionStorage.setItem('medisimple_report', JSON.stringify(data));
-      sessionStorage.setItem('medisimple_mode',   mode || 'demo');
+      sessionStorage.setItem('medisimple_mode', mode || 'demo');
     } catch (e) { /* storage may be blocked */ }
 
     hideLoader();
@@ -133,8 +133,62 @@
     renderMetrics(data.metrics);
     typewriterEffect(aiTyping, data.aiExplanation, 7);
     animateScore(data.healthScore);
+    updateRemediationPanel(data.metrics);
 
     if (message) showNotice(message, 4000);
+  }
+
+  // ── ONE CLICK REMEDIATION ─────────────────────────────────────────────────
+  function updateRemediationPanel(metrics) {
+    const remediationText = document.getElementById('remediationText');
+    const remediationBtn = document.getElementById('remediationBtn');
+    const display = document.getElementById('mealPlanDisplay');
+    if (!remediationText || !remediationBtn) return;
+
+    // Find abnormal metrics
+    const abnormal = metrics.filter(m => m.status === 'high' || m.status === 'low' || m.status === 'borderline');
+
+    if (abnormal.length > 0) {
+      const issues = abnormal.map(m => m.name).join(', ');
+      remediationText.innerHTML = `Based on your out-of-range metrics (<strong>${issues}</strong>), we've generated a 7-day personalized meal plan to help normalize these values.`;
+
+      if (display) {
+        display.style.display = 'block';
+        display.innerHTML = '<i>🩺 Generative AI is building your tailored 7-day meal plan...</i>';
+        const prompt = `Based on these out-of-range lab results: ${issues}, generate a helpful, short 7-day meal plan highlighting foods that fix these specific issues. Use standard emojis. Keep it under 150 words.`;
+
+        fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question: prompt,
+            context: abnormal
+          })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.answer) {
+              display.textContent = data.answer;
+            } else {
+              display.innerHTML = '<i>Failed to generate meal plan. Please check backend connection.</i>';
+            }
+          })
+          .catch(err => {
+            display.innerHTML = '<i>Error fetching AI Meal Plan via HuggingFace: ' + err.message + '</i>';
+          });
+      }
+
+      remediationBtn.onclick = () => {
+        showNotice('Generative AI is building your tailored Instamart basket...', 3000);
+        setTimeout(() => {
+          window.open('https://www.instacart.com/', '_blank');
+        }, 1500);
+      };
+    } else {
+      remediationText.textContent = "Your metrics are perfectly normal! Click below to order a healthy maintenance grocery list.";
+      if (display) display.style.display = 'none';
+      remediationBtn.onclick = () => window.open('https://www.instacart.com/', '_blank');
+    }
   }
 
   // ── RENDER METRICS GRID ──────────────────────────────────────────────────
@@ -142,9 +196,9 @@
     metricsGrid.innerHTML = '';
     metrics.forEach((metric, i) => {
       const trendSymbol = metric.trend === 'up' ? '↑' : metric.trend === 'down' ? '↓' : '→';
-      const trendClass  = metric.trend === 'up' ? 'up' : metric.trend === 'down' ? 'down' : 'stable';
-      const tooltip     = getTooltip(metric.id);
-      const isNA        = metric.value === 'N/A';
+      const trendClass = metric.trend === 'up' ? 'up' : metric.trend === 'down' ? 'down' : 'stable';
+      const tooltip = getTooltip(metric.id);
+      const isNA = metric.value === 'N/A';
 
       const card = document.createElement('div');
       card.className = `metric-card ${isNA ? 'na' : metric.status}`;
@@ -182,10 +236,10 @@
     const start = performance.now();
 
     function update(now) {
-      const elapsed  = now - start;
+      const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      const eased    = 1 - Math.pow(1 - progress, 3);
-      const current  = Math.round(eased * score);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(eased * score);
       scoreBar.style.width = `${eased * score}%`;
       scoreValue.textContent = current;
       if (progress < 1) {
@@ -200,9 +254,9 @@
   }
 
   function setScoreDescription(score) {
-    if (score >= 80)      scoreDesc.textContent = '🟢 Excellent — Your health is in great shape!';
+    if (score >= 80) scoreDesc.textContent = '🟢 Excellent — Your health is in great shape!';
     else if (score >= 60) scoreDesc.textContent = '🟡 Good — A few areas to watch. Minor lifestyle changes recommended.';
-    else                  scoreDesc.textContent = '🔴 Needs Attention — Please consult your doctor for follow-up.';
+    else scoreDesc.textContent = '🔴 Needs Attention — Please consult your doctor for follow-up.';
   }
 
   // ── VOICE SYNTHESIS ──────────────────────────────────────────────────────
@@ -221,10 +275,10 @@
 
     const text = (activeReport ? activeReport.aiExplanation : SAMPLE_REPORT.aiExplanation)
       .replace(/[🔴🟡✅📋ℹ️]/g, '');
-    const utterance  = new SpeechSynthesisUtterance(text);
-    utterance.rate   = 0.9;
-    utterance.pitch  = 1.0;
-    utterance.onend  = () => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.onend = () => {
       speaking = false;
       voiceBtn.textContent = '🔊 Listen';
       voiceBtn.classList.remove('speaking');
@@ -242,7 +296,7 @@
     const btn = item.querySelector('.faq-question');
     btn.addEventListener('click', () => {
       const isActive = item.classList.contains('active');
-      
+
       // Close all others
       faqItems.forEach(otherItem => {
         otherItem.classList.remove('active');

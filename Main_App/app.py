@@ -13,22 +13,17 @@ from ner_extractor import extract_metrics_from_pdf
 # ── Resolve absolute paths ──────────────────────────────────────────────────
 # ignition2/app.py  →  parent is the medisimple root (where index.html lives)
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))   # …/ignition2
-ROOT_DIR   = os.path.dirname(BASE_DIR)                    # …/medisimple  (static root)
-
+ROOT_DIR   = os.path.dirname(BASE_DIR)                    # …/medisimple(static root)
 import sys
 if ROOT_DIR not in sys.path:
     sys.path.append(ROOT_DIR)
 from Chatbot import get_therapist_response_simple
-
 app = Flask(__name__, static_folder=ROOT_DIR, static_url_path='')
 CORS(app)
-
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
 # ── Database Setup ────────────────────────────────────────────────────────
 DB_FILE = os.path.join(BASE_DIR, 'medisimple.db')
-
 def init_db():
     conn = sqlite3.connect(DB_FILE)
     c = conn.cursor()
@@ -63,8 +58,6 @@ def get_db():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     return conn
-
-
 # ── Fallback demo data ──────────────────────────────────────────────────────
 DUMMY_ANALYSIS = {
     "patientName": "MediSimple User",

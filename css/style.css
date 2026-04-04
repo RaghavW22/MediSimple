@@ -1065,3 +1065,123 @@ body {
 .theme-toggle:hover {
   background: rgba(128,128,128,0.1);
 }
+
+/* ── INTERACTIVE BIO-MAP ─────────────────────────────────────────── */
+.section-cols {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  margin-top: 30px;
+}
+.bio-map-container {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  position: relative;
+  min-height: 500px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+.health-metrics-wrapper {
+  flex: 1;
+}
+
+@media(max-width: 900px) {
+  .section-cols {
+    flex-direction: column;
+  }
+}
+
+.bio-map-svg {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  cursor: crosshair;
+}
+
+.organ {
+  fill: var(--text-muted);
+  opacity: 0.3;
+  transition: all 0.3s ease;
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.organ:hover {
+  opacity: 0.6;
+}
+
+/* Abnormal Glow Effects */
+.organ.glow-danger {
+  fill: #ef4444;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+  animation: pulse-danger 2s infinite;
+  cursor: pointer;
+}
+
+.organ.glow-warning {
+  fill: #f59e0b;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.8));
+  animation: pulse-warning 2s infinite;
+  cursor: pointer;
+}
+
+@keyframes pulse-danger {
+  0% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6)); }
+  50% { transform: scale(1.02); filter: drop-shadow(0 0 15px rgba(239, 68, 68, 1)); }
+  100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6)); }
+}
+
+@keyframes pulse-warning {
+  0% { filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6)); }
+  50% { filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.9)); }
+  100% { filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6)); }
+}
+
+.bio-map-popup {
+  position: absolute;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  width: 240px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  z-index: 10;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  pointer-events: none;
+  text-align: left;
+}
+
+.bio-map-popup.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.bio-map-popup h4 {
+  margin: 0 0 8px 0;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.bio-map-popup p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.bio-map-popup .popup-metric {
+  color: var(--text);
+  font-size: 13px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+

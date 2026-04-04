@@ -530,6 +530,7 @@
               patientName: currentUser ? currentUser.name : "Patient",
               reportDate: past.reportDate,
               healthScore: past.healthScore,
+              aiExplanation: past.aiExplanation || "Reviewing this past report based on historical data.",
               metrics: past.metrics,
               recommendations: [] 
           };
@@ -588,11 +589,95 @@
   };
 
   // ──────────────────────────────────────────
+  // AI & REMEDIATION PIPELINE
+  // ──────────────────────────────────────────
+  function renderAIExplanation(text) {
+    const sec = document.getElementById('aiAndActionSection');
+    const typeWrap = document.getElementById('aiTyping');
+    if (!sec || !typeWrap) return;
+    
+    sec.style.display = 'block';
+    typeWrap.textContent = '';
+    
+    let i = 0;
+    const speed = 7;
+    const interval = setInterval(() => {
+      typeWrap.textContent += text[i] || '';
+      i++;
+      if (i >= text.length) clearInterval(interval);
+    }, speed);
+  }
+
+  function renderRemediationPanel(metrics) {
+    const textEl = document.getElementById('remediationText');
+    const btn = document.getElementById('remediationBtn');
+    const display = document.getElementById('mealPlanDisplay');
+    if (!textEl || !btn) return;
+
+    const abnormal = metrics.filter(m => m.status === 'high' || m.status === 'low' || m.status === 'borderline');
+    
+    if (abnormal.length > 0) {
+      const issues = abnormal.map(m => m.name).join(', ');
+      textEl.innerHTML = `Based on your out-of-range metrics (<strong>${issues}</strong>), we've generated a 7-day personalized meal plan to help normalize these values.`;
+      
+      if (display) {
+         display.style.display = 'block';
+         display.innerHTML = '<i>🩺 Generative AI is building your tailored 7-day meal plan...</i>';
+         const prompt = `Based on these out-of-range lab results: ${issues}, generate a helpful, short 7-day meal plan highlighting foods that fix these specific issues. Use standard emojis. Keep it under 150 words.`;
+         
+         fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+               question: prompt,
+               context: abnormal
+            })
+         })
+         .then(res => res.json())
+         .then(data => {
+             if (data.success && data.answer) {
+                 display.textContent = data.answer;
+             } else {
+                 display.innerHTML = '<i>Failed to generate meal plan. Please check backend connection.</i>';
+             }
+         })
+         .catch(err => {
+             display.innerHTML = '<i>Error fetching AI Meal Plan via HuggingFace: ' + err.message + '</i>';
+         });
+      }
+
+      btn.onclick = () => {
+        const n = document.createElement('div');
+        n.style.cssText = "position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0a0a0a;color:white;padding:12px 24px;border-radius:10px;font-size:14px;z-index:9999;font-family:'DM Sans',sans-serif;box-shadow:0 4px 24px rgba(0,0,0,0.3);";
+        n.textContent = 'Generative AI is building your tailored Instamart basket...';
+        document.body.appendChild(n);
+        setTimeout(() => n.remove(), 3000);
+        
+        setTimeout(() => {
+          window.open('https://www.instacart.com/', '_blank');
+        }, 1500);
+      };
+    } else {
+      textEl.textContent = "Your metrics are perfectly normal! Click below to order a healthy maintenance grocery list.";
+      if (display) display.style.display = 'none';
+      btn.onclick = () => window.open('https://www.instacart.com/', '_blank');
+    }
+  }
+
+  // ──────────────────────────────────────────
   // RENDER ALL
   // ──────────────────────────────────────────
   function renderAll(data) {
     activeData = data;
     renderMetricsGrid(data.metrics);
+    
+    if (data.aiExplanation) {
+      renderAIExplanation(data.aiExplanation);
+    }
+    if (data.metrics) {
+      renderRemediationPanel(data.metrics);
+    }
+
     setTimeout(() => {
       animateScoreRing(data.healthScore);
       renderCurrentCharts(data.metrics);
