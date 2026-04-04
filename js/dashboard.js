@@ -625,7 +625,7 @@
          display.innerHTML = '<i>🩺 Generative AI is building your tailored 7-day meal plan...</i>';
          const prompt = `Based on these out-of-range lab results: ${issues}, generate a helpful, short 7-day meal plan highlighting foods that fix these specific issues. Use standard emojis. Keep it under 150 words.`;
          
-         fetch('/api/chat', {
+         fetch(`${API_BASE}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
