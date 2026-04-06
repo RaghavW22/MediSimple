@@ -1,0 +1,14 @@
+# MediSimple — Python dependencies
+# Install with:  pip install -r requirements.txt
+
+# ── Web framework ──
+Flask==3.0.0
+flask-cors==4.0.0
+python-dotenv==1.0.0
+
+# ── PDF handling ──
+pdfplumber==0.10.3       # text + table extraction from PDFs
+
+# ── Utilities ──
+gunicorn==21.2.0         # production WSGI server (Linux/Mac only)
+requests==2.31.0         # HTTP client for HuggingFace inference API
