@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+.idea/
+.venv/
+backend/uploads/
+*.pdf
+*.db
+!frontend/
+!backend/
+!database/

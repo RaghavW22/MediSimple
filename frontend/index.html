@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cipher Guard — AI Medical Report Protection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="index.html" class="logo">Cipher<span>Guard</span></a>
+      <div style="display:flex; align-items:center; gap:20px;">
+        <div class="nav-links" id="navLinks">
+          <!-- populated dynamically based on session -->
+        </div>
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle Dark Mode">🌙</button>
+      </div>
+    </div>
+  </nav>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const s = localStorage.getItem('ms_session') || sessionStorage.getItem('ms_session');
+      const nav = document.getElementById('navLinks');
+      if (s) {
+        try {
+          const u = JSON.parse(s);
+          if (u.loggedIn) {
+            nav.innerHTML = `
+              <span style="font-size:14px; color:var(--text-muted); margin-right:15px;">Welcome, ${u.name.split(' ')[0]}</span>
+              <a href="dashboard.html" class="nav-cta">Dashboard →</a>
+              <a href="#" onclick="localStorage.removeItem('ms_session');sessionStorage.removeItem('ms_session');location.reload();" style="font-size:14px; margin-left:10px;">Logout</a>
+            `;
+            return;
+          }
+        } catch(e) {}
+      }
+      nav.innerHTML = `
+        <a href="login.html" style="font-weight:600; margin-right:10px;">Log In</a>
+        <a href="signup.html" class="nav-cta">Sign Up Free →</a>
+      `;
+    });
+  </script>
+
+  <!-- HERO SECTION -->
+  <section class="hero">
+    <div class="hero-tag">✦ AI-Powered Health Intelligence</div>
+    <h1 class="hero-headline">
+      Decode Your<br/>
+      <span class="gradient-text">Medical Reports</span><br/>
+      Instantly.
+    </h1>
+    <p class="hero-sub">Understand your health reports in seconds — no medical degree required.</p>
+
+    <!-- DRAG & DROP UPLOAD UI -->
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-inner">
+        <div class="upload-icon">
+          <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+            <path d="M22 28V16M22 16L17 21M22 16L27 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M8 30C5.79 30 4 28.21 4 26C4 24.03 5.44 22.4 7.34 22.07C7.12 21.43 7 20.73 7 20C7 16.13 10.13 13 14 13C14.24 13 14.47 13.01 14.7 13.04C16.09 10.58 18.87 9 22 9C26.97 9 31 13.03 31 18C31 18.24 30.99 18.48 30.97 18.71C33.27 19.28 35 21.35 35 23.83C35 26.69 32.69 29 29.83 29" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <p class="upload-text">Drag & drop your PDF report here</p>
+        <p class="upload-sub">or</p>
+        <label class="upload-browse" for="fileInput">Browse File</label>
+        <input type="file" id="fileInput" accept=".pdf" hidden/>
+      </div>
+      <div class="upload-formats">Supports PDF · Max 20MB</div>
+    </div>
+
+    <div class="hero-actions">
+      <button class="btn-primary" id="demoBtn">⚡ Try Demo</button>
+      <p class="hero-note">No sign-up required · Free forever</p>
+    </div>
+
+    <div class="hero-tagline">"Your health, decoded."</div>
+  </section>
+
+  <!-- LOADING OVERLAY -->
+  <div class="loader-overlay" id="loaderOverlay">
+    <div class="loader-card">
+      <div class="loader-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring ring2"></div>
+        <div class="spinner-ring ring3"></div>
+      </div>
+      <p class="loader-text">Analyzing your report using AI...</p>
+      <div class="loader-steps">
+        <span class="step active" id="step1">Extracting text</span>
+        <span class="step" id="step2">Running AI model</span>
+        <span class="step" id="step3">Generating insights</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS SECTION -->
+  <section class="results-section hidden" id="resultsSection">
+
+    <!-- AI EXPLANATION PANEL -->
+    <div class="section-label">✦ AI Explanation</div>
+    <div class="ai-panel" id="aiPanel">
+      <div class="ai-header">
+        <div class="ai-avatar">🤖</div>
+        <div>
+          <div class="ai-name">Cipher Guard AI</div>
+          <div class="ai-status">Analysis complete · Protected User</div>
+        </div>
+        <button class="voice-btn" id="voiceBtn" title="Listen to explanation">
+          🔊 Listen
+        </button>
+      </div>
+      <div class="ai-body" id="aiBody">
+        <div class="ai-typing" id="aiTyping"></div>
+      </div>
+      <div class="ai-footer">
+        <span class="ai-tag">🩺 General Health</span>
+        <span class="ai-tag">📊 Lab Results</span>
+        <span class="ai-tag">💊 Recommendations</span>
+      </div>
+    </div>
+
+    <!-- TAGLINE -->
+    <div class="tagline-banner">"AI that speaks human."</div>
+
+    <!-- HEALTH METRICS GRID -->
+    <div class="section-label">✦ Health Metrics</div>
+    <div class="metrics-grid" id="metricsGrid">
+      <!-- Populated by app.js -->
+    </div>
+
+    <!-- HEALTH SCORE -->
+    <div class="score-section">
+      <div class="score-label">Overall Health Score</div>
+      <div class="score-bar-wrap">
+        <div class="score-bar" id="scoreBar"></div>
+      </div>
+      <div class="score-value" id="scoreValue">0</div>
+      <p class="score-desc" id="scoreDesc">Calculating...</p>
+    </div>
+
+    <!-- CUSTOM DIET & MEAL PLAN -->
+    <div class="section-label">✦ Action Plan</div>
+    <div class="remediation-panel" id="remediationPanel" style="background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:24px; text-align:center; margin-bottom:40px;">
+       <h3 style="margin-bottom:10px;">Custom Diet & Meal Plan</h3>
+       <p id="remediationText" style="color:var(--text-secondary); font-size:14px; margin-bottom:20px;">Analyzing metrics to generate your tailored meal plan...</p>
+       
+       <div id="mealPlanDisplay" style="display:none; background:var(--off-white, #f8fafc); border:1px solid var(--border, #e2e8f0); border-radius:12px; padding:20px; font-size:14px; text-align:left; color:var(--text-secondary, #334155); margin-bottom:20px; white-space:pre-wrap; max-height:300px; overflow-y:auto; line-height:1.6;"></div>
+       
+       <button id="remediationBtn" class="btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: auto; padding: 12px 24px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border:none; border-radius:30px; color:white; font-weight:600; cursor:pointer;">
+         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+         Order Healing Foods via Swiggy Instamart
+       </button>
+       <p style="font-size: 11px; color: var(--text-muted); margin-top: 10px;">Generates a Swiggy Instamart cart filled with foods to fix your specific lab results.</p>
+    </div>
+
+    <!-- DOWNLOAD BUTTON -->
+    <div class="download-wrap" style="justify-content: center;">
+      <a href="dashboard.html" class="btn-secondary" style="background:var(--blue); color:white; border:none; padding:14px 24px;">View Full Dashboard →</a>
+    </div>
+
+    <!-- BOTTOM TAGLINE -->
+    <div class="tagline-banner bottom">"Security meets clarity in seconds."</div>
+  </section>
+
+  <!-- FEATURES SECTION -->
+  <section class="features-section" id="features">
+    <div class="section-label center">✦ What We Offer</div>
+    <h2 class="section-title center">Premium Features</h2>
+    <div class="premium-features-grid">
+      <!-- 1. Health Story Mode -->
+      <div class="premium-feature-card group">
+        <div class="premium-icon-wrap">
+          <svg class="premium-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 12h4l3-9 5 18 3-9h5"/>
+          </svg>
+        </div>
+        <h3>Health Story Mode</h3>
+        <p>Understand your reports like a cohesive story.</p>
+      </div>
+
+      <!-- 2. Future Risk Predictor -->
+      <div class="premium-feature-card group">
+        <div class="premium-icon-wrap">
+          <svg class="premium-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <h3>Future Risk Predictor</h3>
+        <p>AI identifies long-term health trajectories.</p>
+      </div>
+
+      <!-- 3. Body Impact Map -->
+      <div class="premium-feature-card group">
+        <div class="premium-icon-wrap">
+          <svg class="premium-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+            <path d="M2 12h20"/>
+          </svg>
+        </div>
+        <h3>Body Impact Map</h3>
+        <p>Visually pinpoint areas needing attention.</p>
+      </div>
+
+      <!-- 4. Instant Action Plan -->
+      <div class="premium-feature-card group">
+        <div class="premium-icon-wrap">
+          <svg class="premium-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </div>
+        <h3>Instant Action Plan</h3>
+        <p>Get a personalized step-by-step health guide.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ SECTION -->
+  <section class="faq-section" id="faq">
+    <div class="section-label center">✦ Got Questions?</div>
+    <h2 class="section-title center">Frequently Asked Questions</h2>
+    <div class="faq-container">
+      <div class="faq-item">
+        <button class="faq-question">
+          <span>Is my medical data secure and private?</span>
+          <span class="faq-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path class="vertical-line" d="M12 5v14"></path></svg>
+          </span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">
+            <p>Yes. Your privacy is our top priority. We use HIPAA-aligned security practices. Your data is processed in real-time and is never stored permanently unless you choose to save it to your account. We never share or sell your information.</p>
+          </div>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">
+          <span>How does Cipher Guard work?</span>
+          <span class="faq-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path class="vertical-line" d="M12 5v14"></path></svg>
+          </span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">
+            <p>Simply upload your medical report as a PDF. Our AI securely reads the text, extracts the key metrics, and translates complex medical jargon into plain insights. It highlights what's normal, what's borderline, and what needs attention.</p>
+          </div>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">
+          <span>Can Cipher Guard diagnose my illness?</span>
+          <span class="faq-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path class="vertical-line" d="M12 5v14"></path></svg>
+          </span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">
+            <p>No. Cipher Guard is an health-security tool designed strictly to help you understand your lab results. It is <strong>not a doctor</strong> and does not provide medical diagnoses or treatment plans. Always consult your healthcare provider for medical advice.</p>
+          </div>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">
+          <span>Do I need an account to use this?</span>
+          <span class="faq-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path class="vertical-line" d="M12 5v14"></path></svg>
+          </span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">
+            <p>You can try our demo for free without an account! However, creating a free account allows you to securely save your history, track your health metrics over time, and unlock advanced dashboard analytics.</p>
+          </div>
+        </div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-question">
+          <span>Is Cipher Guard free to use?</span>
+          <span class="faq-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path class="vertical-line" d="M12 5v14"></path></svg>
+          </span>
+        </button>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">
+            <p>Yes! We offer a fully featured free tier where you can upload and simplify your reports instantly. We may offer premium features in the future for deeper analytics and long-term health tracking across multiple reports.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-logo">Cipher<span>Guard</span></div>
+      <p class="footer-copy">© 2026 Cipher Guard. Built for protection. Digital Health Companion.</p>
+      <div class="footer-links">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="#features">Features</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="js/jargon-data.js"></script>
+  <script src="js/sample-report.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/theme.js"></script>
+  <script>
+    // WA Share feature injected dynamically
+    document.addEventListener("DOMContentLoaded", () => {
+      const createShareButton = () => {
+        const btn = document.createElement("button");
+        btn.innerHTML = `
+          <svg style="margin-right:6px;" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.005-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.002 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+          </svg>
+          Share Report
+        `;
+        btn.style.cssText = `
+          position: fixed; bottom: 30px; left: 30px; z-index: 1000;
+          background: #25D366; color: white; border: none; border-radius: 30px;
+          padding: 12px 24px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+          cursor: pointer; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+          transition: transform 0.2s;
+        `;
+        btn.onmouseover = () => btn.style.transform = "scale(1.05)";
+        btn.onmouseout = () => btn.style.transform = "scale(1)";
+        
+        btn.onclick = () => {
+          let scoreText = "";
+          let metricsText = "";
+          try {
+            const scoreEl = document.getElementById("ringValue") || document.getElementById("scoreValue");
+            if (scoreEl && scoreEl.textContent !== "0") {
+               scoreText = `🏅 Overall Health Score: ${scoreEl.textContent}\n`;
+            }
+            
+            const grid = document.getElementById("dbMetricsGrid") || document.getElementById("metricsGrid");
+            if (grid) {
+              const cards = grid.querySelectorAll(".db-metric-card.high, .db-metric-card.borderline, .metric-card.high, .metric-card.borderline");
+              if (cards.length > 0) {
+                 metricsText = "⚠️ Areas to watch:\n";
+                 cards.forEach(c => {
+                    const name = c.querySelector(".db-card-name, .metric-name").textContent.trim();
+                    metricsText += `- ${name}\n`;
+                 });
+              } else {
+                 metricsText = "✅ All metrics look normal!\n";
+              }
+            }
+          } catch(e) {}
+          
+          const websiteLink = "https://medisimple.onrender.com/";
+          const promo = `\nDecode your own medical reports instantly with AI! No doctor required. Free forever:\n🌐 ${websiteLink}`;
+          const msg = `Take a look at my recent health checkup results via MediSimple!\n\n${scoreText}${metricsText}${promo}`;
+          
+          window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, "_blank");
+        };
+
+        document.body.appendChild(btn);
+      };
+      
+      setTimeout(createShareButton, 800);
+    });
+  </script>
+</body>
+</html>
