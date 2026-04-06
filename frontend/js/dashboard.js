@@ -3,9 +3,16 @@
 
 (function () {
 
-  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-    ? 'http://localhost:5000' 
-    : ''; // Automatically use the current hostname in production (Render)
+  function resolveApiBase() {
+    const host = window.location.hostname;
+    const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+    const isPrivateIp = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(host);
+    // In local/LAN development, route API calls to the local Flask server.
+    if (isLocalHost || isPrivateIp) return 'http://localhost:5000';
+    // In production, use same-origin (Render serves frontend + backend together).
+    return '';
+  }
+  const API_BASE = resolveApiBase();
 
   // Active data source — starts with SAMPLE_REPORT, replaced on upload
   let activeData = null;
@@ -734,11 +741,20 @@
           method: 'POST',
           body: formData
         });
-
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          await res.text();
+          throw new Error(`Server returned HTML/text instead of JSON. Check API URL (${API_BASE || window.location.origin}).`);
+        }
         const json = await res.json();
 
         spinner.classList.add('hidden');
         label.classList.remove('uploading');
+
+        if (!res.ok) {
+          showStatus(statusEl, 'error', `✗ ${json.error || json.message || `Upload failed (${res.status})`}`);
+          return;
+        }
 
         if (json.success && json.data) {
           currentMode = json.mode || 'live';
@@ -763,7 +779,7 @@
       } catch (err) {
         spinner.classList.add('hidden');
         label.classList.remove('uploading');
-        showStatus(statusEl, 'error', `✗ Network error — is the backend running? (${err.message})`);
+        showStatus(statusEl, 'error', `✗ Upload failed. Make sure backend is running on http://localhost:5000 (${err.message})`);
       }
 
       // Reset input so the same file can be re-uploaded

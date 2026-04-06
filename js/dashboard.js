@@ -719,11 +719,20 @@
           method: 'POST',
           body: formData
         });
-
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          await res.text();
+          throw new Error(`Server returned HTML/text instead of JSON. Check API URL (${API_BASE || window.location.origin}).`);
+        }
         const json = await res.json();
 
         spinner.classList.add('hidden');
         label.classList.remove('uploading');
+
+        if (!res.ok) {
+          showStatus(statusEl, 'error', `✗ ${json.error || json.message || `Upload failed (${res.status})`}`);
+          return;
+        }
 
         if (json.success && json.data) {
           currentMode = json.mode || 'live';
@@ -748,7 +757,7 @@
       } catch (err) {
         spinner.classList.add('hidden');
         label.classList.remove('uploading');
-        showStatus(statusEl, 'error', `✗ Network error — is the backend running? (${err.message})`);
+        showStatus(statusEl, 'error', `✗ Upload failed. Make sure backend is running on http://localhost:5000 (${err.message})`);
       }
 
       // Reset input so the same file can be re-uploaded

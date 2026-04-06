@@ -4,9 +4,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('fileInput');
   const uploadZone = document.getElementById('uploadZone');
   const demoBtn = document.getElementById('demoBtn');
-  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-      ? 'http://localhost:5000' 
-      : ''; // Automatically use the current hostname in production (Render)
+  function resolveApiBase() {
+    const host = window.location.hostname;
+    const isLocalHost = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+    const isPrivateIp = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(host);
+    if (isLocalHost || isPrivateIp) return 'http://localhost:5000';
+    return '';
+  }
+  const API_BASE = resolveApiBase();
 
   // UI Elements
   const loaderOverlay = document.getElementById('loaderOverlay');
@@ -22,6 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
       showLoader();
       try {
         const res = await fetch(`${API_BASE}/upload-demo`, { method: 'POST' });
+        const contentType = res.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          await res.text();
+          throw new Error(`Server returned non-JSON response from ${API_BASE || window.location.origin}.`);
+        }
         const json = await res.json();
         if (json.success) {
           sessionStorage.setItem('medisimple_report', JSON.stringify(json.data));
@@ -86,7 +96,18 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         body: formData
       });
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        await res.text();
+        throw new Error(`Server returned non-JSON response from ${API_BASE || window.location.origin}.`);
+      }
       const json = await res.json();
+
+      if (!res.ok) {
+        alert('Upload failed: ' + (json.error || json.message || `HTTP ${res.status}`));
+        hideLoader();
+        return;
+      }
 
       if (json.success && json.data) {
         renderResults(json.data);

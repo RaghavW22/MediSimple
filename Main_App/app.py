@@ -5,21 +5,29 @@
 
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from werkzeug.exceptions import RequestEntityTooLarge
 import os
 import sqlite3
 import json
+import sys
 from ner_extractor import extract_metrics_from_pdf
 
 # ── Resolve absolute paths ──────────────────────────────────────────────────
 # ignition2/app.py  →  parent is the medisimple root (where index.html lives)
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))   # …/ignition2
 ROOT_DIR   = os.path.dirname(BASE_DIR)                    # …/medisimple(static root)
-import sys
 if ROOT_DIR not in sys.path:
     sys.path.append(ROOT_DIR)
 from Chatbot import get_therapist_response_simple
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 app = Flask(__name__, static_folder=ROOT_DIR, static_url_path='')
 CORS(app)
+app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20MB
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # ── Database Setup ────────────────────────────────────────────────────────
@@ -58,6 +66,13 @@ def get_db():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     return conn
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(_e):
+    return jsonify({
+        "success": False,
+        "error": "File too large. Maximum allowed size is 20MB."
+    }), 413
 # ── Fallback demo data ──────────────────────────────────────────────────────
 DUMMY_ANALYSIS = {
     "patientName": "MediSimple User",
@@ -135,14 +150,14 @@ def upload():
             "error":   "Please upload a valid PDF file."
         }), 400
 
-    import uuid
-    safe_name = os.path.basename(file.filename)
-    unique_filename = f"{uuid.uuid4().hex}_{safe_name}"
-    filepath  = os.path.join(UPLOAD_FOLDER, unique_filename)
-    file.save(filepath)
-    print(f"[app] Saved uploaded file → {filepath}")
-
     try:
+        import uuid
+        safe_name = os.path.basename(file.filename)
+        unique_filename = f"{uuid.uuid4().hex}_{safe_name}"
+        filepath  = os.path.join(UPLOAD_FOLDER, unique_filename)
+        file.save(filepath)
+        print(f"[app] Saved uploaded file -> {filepath}")
+
         # ── Run full extraction pipeline ──
         result = extract_metrics_from_pdf(filepath)
 
@@ -166,7 +181,7 @@ def upload():
         }
 
         found = result["foundCount"]
-        print(f"[app] Extraction complete — {found}/6 metrics found.")
+        print(f"[app] Extraction complete - {found}/6 metrics found.")
 
         # Save to DB if user_id is present
         if user_id and found > 0:
@@ -185,14 +200,14 @@ def upload():
                        else "No metrics found — showing demo data."
         })
 
+    except RequestEntityTooLarge:
+        raise
     except Exception as e:
-        print(f"[app] Pipeline error: {e}")
+        print(f"[app] Upload/Pipeline error: {e}")
         return jsonify({
-            "success": True,
-            "mode":    "demo",
-            "data":    DUMMY_ANALYSIS,
-            "message": f"Extraction error — showing demo data. ({str(e)[:200]})"
-        })
+            "success": False,
+            "error": f"Upload processing failed. ({str(e)[:200]})"
+        }), 500
 
 
 # ──────────────────────────────────────────────────────────────────────────────

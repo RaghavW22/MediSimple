@@ -377,7 +377,8 @@ def extract_metrics_from_text(raw_text: str) -> dict:
         }
 
     print(f"[ner_extractor] Extracted {len(raw_text)} characters.")
-    print(f"[ner_extractor] Preview:\n{raw_text[:400]}\n---")
+    safe_preview = raw_text[:400].encode("ascii", errors="replace").decode("ascii")
+    print(f"[ner_extractor] Preview:\n{safe_preview}\n---")
 
     # ── Step 2: Extract each metric ──
     extracted_metrics = []
@@ -405,7 +406,7 @@ def extract_metrics_from_text(raw_text: str) -> dict:
                 except Exception:
                     pass
 
-            print(f"[ner_extractor] ✓ {metric_name}: {value} → {status}")
+            print(f"[ner_extractor] [OK] {metric_name}: {value} -> {status}")
             extracted_metrics.append({
                 "id":          profile["id"],
                 "name":        metric_name,
@@ -419,7 +420,7 @@ def extract_metrics_from_text(raw_text: str) -> dict:
                 "_found":      True
             })
         else:
-            print(f"[ner_extractor] ✗ {metric_name}: not found")
+            print(f"[ner_extractor] [MISS] {metric_name}: not found")
             extracted_metrics.append({
                 "id":          profile["id"],
                 "name":        metric_name,
@@ -446,7 +447,7 @@ def extract_metrics_from_text(raw_text: str) -> dict:
     # ── Step 4: AI explanation ──
     ai_explanation = _build_ai_explanation(extracted_metrics, health_score)
 
-    print(f"[ner_extractor] Done — {found_count}/6 metrics found. Health score: {health_score}")
+    print(f"[ner_extractor] Done - {found_count}/6 metrics found. Health score: {health_score}")
 
     return {
         "patientName":      "MediSimple User",
