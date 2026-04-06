@@ -19,15 +19,82 @@
     <div class="nav-inner">
       <a href="index.html" class="logo">Medi<span>Simple</span></a>
       <div class="nav-right">
-        <div style="text-align: right; line-height: 1.2; cursor: pointer;" id="profileClickArea">
-          <div class="patient-badge" id="navPatientName" style="margin-bottom: 4px;">👤 MediSimple User</div>
-          <div style="font-size: 11px; color: var(--text-muted);" id="navPatientAddress">Click to view history</div>
+        <div class="nav-profile-wrap">
+          <button id="profileClickArea" class="profile-trigger" type="button" aria-expanded="false" aria-controls="profileDropdown">
+            <span class="profile-trigger-icon">👤</span>
+            <span class="profile-trigger-text">Profile</span>
+            <span class="profile-trigger-caret">▾</span>
+          </button>
         </div>
         <a href="index.html" class="btn-back" onclick="logout()">Logout</a>
         <button id="themeToggle" class="theme-toggle" aria-label="Toggle Dark Mode">🌙</button>
       </div>
     </div>
   </nav>
+  <section class="profile-dropdown-shell">
+    <div id="profileDropdown" class="profile-dropdown hidden">
+      <div class="profile-dropdown-head">
+        <div>
+          <h3>Health Profile</h3>
+          <p>Saved to your account and auto-loaded on next login.</p>
+        </div>
+        <span class="profile-status" id="profileSaveStatus"></span>
+      </div>
+      <div class="profile-user-mini">
+        <div class="patient-badge" id="navPatientName">👤 MediSimple User</div>
+        <div id="navPatientAddress" class="profile-mini-address"></div>
+      </div>
+      <form id="profileForm" class="profile-form-grid" novalidate>
+        <div class="profile-field">
+          <label for="profileDob">Date of Birth</label>
+          <input id="profileDob" type="date" />
+        </div>
+        <div class="profile-field">
+          <label for="profileAge">Age (Auto)</label>
+          <input id="profileAge" type="number" readonly />
+        </div>
+        <div class="profile-field">
+          <label for="profileHeight">Height (cm)</label>
+          <input id="profileHeight" type="number" min="0" step="0.1" placeholder="e.g. 172.0" />
+        </div>
+        <div class="profile-field">
+          <label for="profileWeight">Weight (kg)</label>
+          <input id="profileWeight" type="number" min="0" step="0.1" placeholder="e.g. 65.5" />
+        </div>
+        <div class="profile-field">
+          <label for="profileBmi">BMI (Auto)</label>
+          <input id="profileBmi" type="text" readonly />
+        </div>
+        <div class="profile-field">
+          <label for="profileBloodGroup">Blood Group</label>
+          <input id="profileBloodGroup" type="text" placeholder="e.g. O+" />
+        </div>
+        <div class="profile-field profile-field-full">
+          <label for="profileMedicalIssues">Existing Medical Issues</label>
+          <textarea id="profileMedicalIssues" rows="2" placeholder="Diabetes, hypertension, thyroid, etc."></textarea>
+        </div>
+        <div class="profile-field profile-field-full">
+          <label for="profileAllergies">Allergies</label>
+          <textarea id="profileAllergies" rows="2" placeholder="Drug, food, seasonal allergies"></textarea>
+        </div>
+        <div class="profile-field profile-field-full">
+          <label for="profileMedications">Current Medications</label>
+          <textarea id="profileMedications" rows="2" placeholder="List ongoing medicines and dosage (optional)"></textarea>
+        </div>
+        <div class="profile-field">
+          <label for="profileEmergency">Emergency Contact</label>
+          <input id="profileEmergency" type="text" placeholder="Name + phone number" />
+        </div>
+        <div class="profile-field profile-field-full">
+          <label for="profileLifestyleNotes">Lifestyle Notes</label>
+          <textarea id="profileLifestyleNotes" rows="2" placeholder="Smoking, alcohol, activity level, sleep pattern (optional)"></textarea>
+        </div>
+        <div class="profile-actions profile-field-full">
+          <button type="submit" class="profile-save-btn" id="profileSaveBtn">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </section>
 
   <!-- DASHBOARD HEADER -->
   <header class="db-header">

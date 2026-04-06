@@ -10,6 +10,7 @@ import os
 import sqlite3
 import json
 import sys
+from datetime import datetime
 from ner_extractor import extract_metrics_from_pdf
 
 # ── Resolve absolute paths ──────────────────────────────────────────────────────────
@@ -55,6 +56,21 @@ def init_db():
         metrics_json TEXT,
         FOREIGN KEY(user_id) REFERENCES users(id)
     )''')
+    c.execute('''CREATE TABLE IF NOT EXISTS user_profiles (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER UNIQUE,
+        date_of_birth TEXT,
+        height_cm REAL,
+        weight_kg REAL,
+        medical_issues TEXT,
+        allergies TEXT,
+        medications TEXT,
+        blood_group TEXT,
+        emergency_contact TEXT,
+        lifestyle_notes TEXT,
+        updated_at TEXT,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )''')
     # Create demo user if not exists
     c.execute("SELECT * FROM users WHERE email='demo@medisimple.ai'")
     if not c.fetchone():
@@ -69,6 +85,33 @@ def get_db():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
     return conn
+
+def profile_row_to_json(row):
+    if not row:
+        return {
+            "dateOfBirth": "",
+            "heightCm": None,
+            "weightKg": None,
+            "medicalIssues": "",
+            "allergies": "",
+            "medications": "",
+            "bloodGroup": "",
+            "emergencyContact": "",
+            "lifestyleNotes": "",
+            "updatedAt": None
+        }
+    return {
+        "dateOfBirth": row["date_of_birth"] or "",
+        "heightCm": row["height_cm"],
+        "weightKg": row["weight_kg"],
+        "medicalIssues": row["medical_issues"] or "",
+        "allergies": row["allergies"] or "",
+        "medications": row["medications"] or "",
+        "bloodGroup": row["blood_group"] or "",
+        "emergencyContact": row["emergency_contact"] or "",
+        "lifestyleNotes": row["lifestyle_notes"] or "",
+        "updatedAt": row["updated_at"]
+    }
 
 @app.errorhandler(RequestEntityTooLarge)
 def handle_file_too_large(_e):
@@ -309,6 +352,83 @@ def api_login():
             "address": user['address']
         }})
     return jsonify({"success": False, "message": "Invalid email or password"}), 401
+
+@app.route('/api/profile/<int:user_id>', methods=['GET'])
+def get_user_profile(user_id):
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id FROM users WHERE id = ?", (user_id,))
+    user = c.fetchone()
+    if not user:
+        conn.close()
+        return jsonify({"success": False, "message": "User not found"}), 404
+
+    c.execute("SELECT * FROM user_profiles WHERE user_id = ?", (user_id,))
+    row = c.fetchone()
+    conn.close()
+    return jsonify({"success": True, "profile": profile_row_to_json(row)})
+
+@app.route('/api/profile/<int:user_id>', methods=['PUT'])
+def upsert_user_profile(user_id):
+    data = request.json or {}
+    date_of_birth = (data.get('dateOfBirth') or '').strip()
+    height_cm = data.get('heightCm')
+    weight_kg = data.get('weightKg')
+    medical_issues = (data.get('medicalIssues') or '').strip()
+    allergies = (data.get('allergies') or '').strip()
+    medications = (data.get('medications') or '').strip()
+    blood_group = (data.get('bloodGroup') or '').strip()
+    emergency_contact = (data.get('emergencyContact') or '').strip()
+    lifestyle_notes = (data.get('lifestyleNotes') or '').strip()
+
+    def to_float_or_none(value):
+        if value in (None, ''):
+            return None
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    height_cm = to_float_or_none(height_cm)
+    weight_kg = to_float_or_none(weight_kg)
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute("SELECT id FROM users WHERE id = ?", (user_id,))
+    user = c.fetchone()
+    if not user:
+        conn.close()
+        return jsonify({"success": False, "message": "User not found"}), 404
+
+    updated_at = datetime.utcnow().isoformat() + "Z"
+    c.execute("SELECT id FROM user_profiles WHERE user_id = ?", (user_id,))
+    existing = c.fetchone()
+    if existing:
+        c.execute("""
+            UPDATE user_profiles
+            SET date_of_birth = ?, height_cm = ?, weight_kg = ?, medical_issues = ?, allergies = ?,
+                medications = ?, blood_group = ?, emergency_contact = ?, lifestyle_notes = ?, updated_at = ?
+            WHERE user_id = ?
+        """, (
+            date_of_birth, height_cm, weight_kg, medical_issues, allergies,
+            medications, blood_group, emergency_contact, lifestyle_notes, updated_at, user_id
+        ))
+    else:
+        c.execute("""
+            INSERT INTO user_profiles (
+                user_id, date_of_birth, height_cm, weight_kg, medical_issues, allergies,
+                medications, blood_group, emergency_contact, lifestyle_notes, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            user_id, date_of_birth, height_cm, weight_kg, medical_issues, allergies,
+            medications, blood_group, emergency_contact, lifestyle_notes, updated_at
+        ))
+    conn.commit()
+
+    c.execute("SELECT * FROM user_profiles WHERE user_id = ?", (user_id,))
+    saved_row = c.fetchone()
+    conn.close()
+    return jsonify({"success": True, "profile": profile_row_to_json(saved_row)})
 
 @app.route('/api/history/<int:user_id>', methods=['GET'])
 def get_user_history(user_id):

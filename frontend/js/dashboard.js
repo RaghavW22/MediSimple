@@ -18,6 +18,7 @@
   let activeData = null;
   let currentMode = 'demo'; // 'demo' | 'live'
   let currentUser = null;
+  let currentProfile = null;
   let chartInstances = [];
 
   function checkSession() {
@@ -400,6 +401,176 @@
     } catch (err) {
       console.error("History fetch error", err);
     }
+  }
+
+  function calculateAgeFromDob(dobValue) {
+    if (!dobValue) return '';
+    const dob = new Date(dobValue);
+    if (Number.isNaN(dob.getTime())) return '';
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    const dayDiff = today.getDate() - dob.getDate();
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+      age -= 1;
+    }
+    return age >= 0 ? age : '';
+  }
+
+  function calculateBmi(heightCmValue, weightKgValue) {
+    const heightCm = parseFloat(heightCmValue);
+    const weightKg = parseFloat(weightKgValue);
+    if (!heightCm || !weightKg || heightCm <= 0 || weightKg <= 0) return '';
+    const bmi = weightKg / Math.pow(heightCm / 100, 2);
+    return bmi.toFixed(2);
+  }
+
+  function setProfileStatus(message, type = 'neutral') {
+    const statusEl = document.getElementById('profileSaveStatus');
+    if (!statusEl) return;
+    statusEl.textContent = message || '';
+    if (type === 'success') statusEl.style.color = '#10b981';
+    else if (type === 'error') statusEl.style.color = '#ef4444';
+    else statusEl.style.color = '';
+  }
+
+  function refreshDerivedProfileFields() {
+    const dobEl = document.getElementById('profileDob');
+    const ageEl = document.getElementById('profileAge');
+    const heightEl = document.getElementById('profileHeight');
+    const weightEl = document.getElementById('profileWeight');
+    const bmiEl = document.getElementById('profileBmi');
+    if (!dobEl || !ageEl || !heightEl || !weightEl || !bmiEl) return;
+    ageEl.value = calculateAgeFromDob(dobEl.value);
+    bmiEl.value = calculateBmi(heightEl.value, weightEl.value);
+  }
+
+  function fillProfileForm(profile) {
+    const dobEl = document.getElementById('profileDob');
+    const heightEl = document.getElementById('profileHeight');
+    const weightEl = document.getElementById('profileWeight');
+    const medEl = document.getElementById('profileMedicalIssues');
+    const allergiesEl = document.getElementById('profileAllergies');
+    const medsEl = document.getElementById('profileMedications');
+    const bloodEl = document.getElementById('profileBloodGroup');
+    const emergencyEl = document.getElementById('profileEmergency');
+    const notesEl = document.getElementById('profileLifestyleNotes');
+
+    if (dobEl) dobEl.value = profile.dateOfBirth || '';
+    if (heightEl) heightEl.value = profile.heightCm ?? '';
+    if (weightEl) weightEl.value = profile.weightKg ?? '';
+    if (medEl) medEl.value = profile.medicalIssues || '';
+    if (allergiesEl) allergiesEl.value = profile.allergies || '';
+    if (medsEl) medsEl.value = profile.medications || '';
+    if (bloodEl) bloodEl.value = profile.bloodGroup || '';
+    if (emergencyEl) emergencyEl.value = profile.emergencyContact || '';
+    if (notesEl) notesEl.value = profile.lifestyleNotes || '';
+
+    refreshDerivedProfileFields();
+  }
+
+  function collectProfilePayload() {
+    const dobEl = document.getElementById('profileDob');
+    const heightEl = document.getElementById('profileHeight');
+    const weightEl = document.getElementById('profileWeight');
+    const medEl = document.getElementById('profileMedicalIssues');
+    const allergiesEl = document.getElementById('profileAllergies');
+    const medsEl = document.getElementById('profileMedications');
+    const bloodEl = document.getElementById('profileBloodGroup');
+    const emergencyEl = document.getElementById('profileEmergency');
+    const notesEl = document.getElementById('profileLifestyleNotes');
+    return {
+      dateOfBirth: dobEl ? dobEl.value : '',
+      heightCm: heightEl && heightEl.value ? parseFloat(heightEl.value) : null,
+      weightKg: weightEl && weightEl.value ? parseFloat(weightEl.value) : null,
+      medicalIssues: medEl ? medEl.value.trim() : '',
+      allergies: allergiesEl ? allergiesEl.value.trim() : '',
+      medications: medsEl ? medsEl.value.trim() : '',
+      bloodGroup: bloodEl ? bloodEl.value.trim() : '',
+      emergencyContact: emergencyEl ? emergencyEl.value.trim() : '',
+      lifestyleNotes: notesEl ? notesEl.value.trim() : ''
+    };
+  }
+
+  async function loadProfile() {
+    if (!currentUser || !currentUser.id) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/profile/${currentUser.id}`);
+      const json = await res.json();
+      if (json.success && json.profile) {
+        currentProfile = json.profile;
+        fillProfileForm(json.profile);
+      }
+    } catch (err) {
+      console.error('Profile load failed', err);
+    }
+  }
+
+  function initProfileDropdown() {
+    const profileBtn = document.getElementById('profileClickArea');
+    const profileDropdown = document.getElementById('profileDropdown');
+    const profileForm = document.getElementById('profileForm');
+    const saveBtn = document.getElementById('profileSaveBtn');
+    const dobEl = document.getElementById('profileDob');
+    const heightEl = document.getElementById('profileHeight');
+    const weightEl = document.getElementById('profileWeight');
+
+    if (!profileBtn || !profileDropdown || !profileForm) return;
+
+    const toggleDropdown = () => {
+      const isHidden = profileDropdown.classList.contains('hidden');
+      profileDropdown.classList.toggle('hidden', !isHidden);
+      profileBtn.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+      if (isHidden) setProfileStatus('');
+    };
+
+    profileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDropdown();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!profileDropdown.contains(e.target) && !profileBtn.contains(e.target)) {
+        profileDropdown.classList.add('hidden');
+        profileBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    [dobEl, heightEl, weightEl].forEach((el) => {
+      if (el) el.addEventListener('input', refreshDerivedProfileFields);
+    });
+
+    profileForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!currentUser || !currentUser.id) {
+        setProfileStatus('Please log in again.', 'error');
+        return;
+      }
+
+      const payload = collectProfilePayload();
+      if (saveBtn) saveBtn.disabled = true;
+      setProfileStatus('Saving...');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/profile/${currentUser.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (json.success) {
+          currentProfile = json.profile;
+          fillProfileForm(json.profile);
+          setProfileStatus('Saved successfully.', 'success');
+        } else {
+          setProfileStatus(json.message || 'Unable to save profile.', 'error');
+        }
+      } catch (err) {
+        setProfileStatus('Network error while saving.', 'error');
+      } finally {
+        if (saveBtn) saveBtn.disabled = false;
+      }
+    });
   }
 
   function drawHistoryChart(historyList) {
@@ -859,6 +1030,8 @@
 
     // Load user history if logged in
     loadHistory();
+    loadProfile();
+    initProfileDropdown();
 
     // Wire up history toggle button
     const historyToggleBtn = document.getElementById('historyToggleBtn');
@@ -876,20 +1049,6 @@
       });
     }
 
-    // Wire up profile click area to toggle history
-    const profileBtn = document.getElementById('profileClickArea');
-    if (profileBtn) {
-      profileBtn.addEventListener('click', () => {
-        const historySec = document.getElementById('historyLogSection');
-        if (historySec) {
-          historySec.style.display = 'block';
-          historySec.scrollIntoView({ behavior: 'smooth' });
-          if (historyPanel && historyPanel.classList.contains('collapsed')) {
-            historyToggleBtn.click();
-          }
-        }
-      });
-    }
   });
 
   // Redraw current charts on resize
@@ -983,3 +1142,4 @@
   }
 
 })();
+
