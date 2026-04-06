@@ -2,16 +2,11 @@ __pycache__/
 *.pyc
 .env
 .idea/
-<<<<<<< HEAD
 .venv/
 backend/uploads/
+uploads/
 *.pdf
 *.db
 !frontend/
 !backend/
 !database/
-=======
-uploads/
-*.pdf
-*.db
->>>>>>> 9301bde621392d7f1a29c0c87ebc54e869c1792f
