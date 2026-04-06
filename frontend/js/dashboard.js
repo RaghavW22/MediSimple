@@ -3,7 +3,9 @@
 
 (function () {
 
-  const API_BASE = 'http://localhost:5000';
+  const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:5000' 
+    : ''; // Automatically use the current hostname in production (Render)
 
   // Active data source — starts with SAMPLE_REPORT, replaced on upload
   let activeData = null;
@@ -33,13 +35,13 @@
   function getInitialData() {
     try {
       const stored = sessionStorage.getItem('medisimple_report');
-      const mode   = sessionStorage.getItem('medisimple_mode') || 'demo';
+      const mode = sessionStorage.getItem('medisimple_mode') || 'demo';
       if (stored) {
         sessionStorage.removeItem('medisimple_report');
         sessionStorage.removeItem('medisimple_mode');
         return { data: JSON.parse(stored), mode };
       }
-    } catch (e) {}
+    } catch (e) { }
     return null;
   }
 
@@ -57,7 +59,7 @@
       card.style.animationDelay = `${i * 0.08}s`;
 
       const trendSymbol = metric.trend === 'up' ? '↑' : metric.trend === 'down' ? '↓' : '→';
-      const trendColor  = metric.trend === 'up' ? '#ef4444' : metric.trend === 'down' ? '#10b981' : '#f59e0b';
+      const trendColor = metric.trend === 'up' ? '#ef4444' : metric.trend === 'down' ? '#10b981' : '#f59e0b';
       const icon = metric.icon || '📊';
 
       card.innerHTML = `
@@ -388,8 +390,8 @@
         drawHistoryChart(result.history);
         renderHistoryLog(result.history);
       }
-    } catch (err) { 
-      console.error("History fetch error", err); 
+    } catch (err) {
+      console.error("History fetch error", err);
     }
   }
 
@@ -405,84 +407,84 @@
     const dbSec = document.getElementById('chartsSection');
     if (dbSec) dbSec.style.display = 'block';
 
-    const labels = historyList.map((h, i) => h.reportDate || `Report ${i+1}`);
+    const labels = historyList.map((h, i) => h.reportDate || `Report ${i + 1}`);
     const healthScores = historyList.map(h => h.healthScore || 0);
 
     const metricsData = {};
     historyList.forEach((h, hIdx) => {
-       if(h.metrics && Array.isArray(h.metrics)) {
-         h.metrics.forEach(m => {
-           if(m.value && m.value !== 'N/A') {
-             if(!metricsData[m.name]) metricsData[m.name] = new Array(historyList.length).fill(null);
-             let val = m.value;
-             if(typeof val === 'string' && val.includes('/')) {
-                 val = parseFloat(val.split('/')[0]); // Use systolic reading
-             } else {
-                 val = parseFloat(val);
-             }
-             if(!isNaN(val)) metricsData[m.name][hIdx] = val;
-           }
-         });
-       }
+      if (h.metrics && Array.isArray(h.metrics)) {
+        h.metrics.forEach(m => {
+          if (m.value && m.value !== 'N/A') {
+            if (!metricsData[m.name]) metricsData[m.name] = new Array(historyList.length).fill(null);
+            let val = m.value;
+            if (typeof val === 'string' && val.includes('/')) {
+              val = parseFloat(val.split('/')[0]); // Use systolic reading
+            } else {
+              val = parseFloat(val);
+            }
+            if (!isNaN(val)) metricsData[m.name][hIdx] = val;
+          }
+        });
+      }
     });
 
     const createChart = (title, data, colorBg, colorBorder) => {
-        const wrap = document.createElement('div');
-        // Add class just in case styles are needed
-        wrap.className = 'chart-card-wrap';
-        wrap.style.background = 'var(--card-bg, var(--white))';
-        wrap.style.borderRadius = '20px';
-        wrap.style.padding = '20px';
-        wrap.style.boxShadow = '0 4px 15px rgba(0,0,0,0.05)';
-        wrap.style.border = '1px solid var(--border)';
+      const wrap = document.createElement('div');
+      // Add class just in case styles are needed
+      wrap.className = 'chart-card-wrap';
+      wrap.style.background = 'var(--card-bg, var(--white))';
+      wrap.style.borderRadius = '20px';
+      wrap.style.padding = '20px';
+      wrap.style.boxShadow = '0 4px 15px rgba(0,0,0,0.05)';
+      wrap.style.border = '1px solid var(--border)';
 
-        const h3 = document.createElement('h3');
-        h3.textContent = title;
-        h3.style.margin = '0 0 15px 0';
-        h3.style.fontSize = '16px';
-        wrap.appendChild(h3);
+      const h3 = document.createElement('h3');
+      h3.textContent = title;
+      h3.style.margin = '0 0 15px 0';
+      h3.style.fontSize = '16px';
+      wrap.appendChild(h3);
 
-        const canvasWrap = document.createElement('div');
-        canvasWrap.style.height = '180px';
-        canvasWrap.style.position = 'relative';
+      const canvasWrap = document.createElement('div');
+      canvasWrap.style.height = '180px';
+      canvasWrap.style.position = 'relative';
 
-        const canvas = document.createElement('canvas');
-        canvasWrap.appendChild(canvas);
-        wrap.appendChild(canvasWrap);
-        container.appendChild(wrap);
+      const canvas = document.createElement('canvas');
+      canvasWrap.appendChild(canvas);
+      wrap.appendChild(canvasWrap);
+      container.appendChild(wrap);
 
-        const instance = new Chart(canvas, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: title,
-              data: data,
-              borderColor: colorBorder,
-              backgroundColor: colorBg,
-              borderWidth: 3,
-              fill: true,
-              tension: 0.4,
-              spanGaps: true,
-              pointBackgroundColor: colorBorder,
-              pointBorderWidth: 2,
-              pointRadius: 4
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-              y: { 
-                beginAtZero: title === 'Health Score Trend',
-                grid: { color: 'rgba(0,0,0,0.04)' }
-              },
-              x: { grid: { display: false } }
+      const instance = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: title,
+            data: data,
+            borderColor: colorBorder,
+            backgroundColor: colorBg,
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            spanGaps: true,
+            pointBackgroundColor: colorBorder,
+            pointBorderWidth: 2,
+            pointRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: title === 'Health Score Trend',
+              grid: { color: 'rgba(0,0,0,0.04)' }
             },
-            plugins: { legend: { display: false } }
-          }
-        });
-        chartInstances.push(instance);
+            x: { grid: { display: false } }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+      chartInstances.push(instance);
     };
 
     // Comparison Chart: Health Score Trend
@@ -497,11 +499,11 @@
 
     let colorIdx = 0;
     Object.keys(metricsData).forEach(key => {
-       if(metricsData[key].some(v => v !== null)) {
-           const col = colors[colorIdx % colors.length];
-           colorIdx++;
-           createChart(key + ' Trend', metricsData[key], col.bg, col.border);
-       }
+      if (metricsData[key].some(v => v !== null)) {
+        const col = colors[colorIdx % colors.length];
+        colorIdx++;
+        createChart(key + ' Trend', metricsData[key], col.bg, col.border);
+      }
     });
   }
 
@@ -509,63 +511,63 @@
     const listContainer = document.getElementById('historyLogList');
     if (!listContainer) return;
     listContainer.innerHTML = '';
-    
+
     // Reverse copy so most recent is first
     const sorted = [...historyList].reverse();
     sorted.forEach((h, i) => {
-       const div = document.createElement('div');
-       div.style.padding = '12px';
-       div.style.borderBottom = '1px solid var(--border)';
-       div.style.display = 'flex';
-       div.style.justifyContent = 'space-between';
-       div.style.alignItems = 'center';
-       
-       div.innerHTML = `
+      const div = document.createElement('div');
+      div.style.padding = '12px';
+      div.style.borderBottom = '1px solid var(--border)';
+      div.style.display = 'flex';
+      div.style.justifyContent = 'space-between';
+      div.style.alignItems = 'center';
+
+      div.innerHTML = `
          <div>
            <strong>${h.reportDate || 'Past Report'}</strong>
            <div style="font-size:12px;color:var(--text-muted)">Health Score: ${h.healthScore}</div>
          </div>
          <button class="btn-secondary" style="padding:4px 8px;font-size:12px;cursor:pointer;" onclick="loadPastReport(${i})">View Details</button>
        `;
-       listContainer.appendChild(div);
+      listContainer.appendChild(div);
     });
-    
+
     window.__msPastHistory = sorted;
   }
 
-  window.loadPastReport = function(idx) {
-      if (window.__msPastHistory && window.__msPastHistory[idx]) {
-          const past = window.__msPastHistory[idx];
-          const pastData = {
-              patientName: currentUser ? currentUser.name : "Patient",
-              reportDate: past.reportDate,
-              healthScore: past.healthScore,
-              aiExplanation: past.aiExplanation || "Reviewing this past report based on historical data.",
-              metrics: past.metrics,
-              recommendations: [] 
-          };
-          renderAll(pastData);
-          const found = (past.metrics || []).filter(m => m.value !== 'N/A').length;
-          showModeBadge('demo', found);
-          const subText = document.getElementById('headerSubText');
-          if (subText) subText.textContent = `Viewing historic lab results from ${past.reportDate}`;
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+  window.loadPastReport = function (idx) {
+    if (window.__msPastHistory && window.__msPastHistory[idx]) {
+      const past = window.__msPastHistory[idx];
+      const pastData = {
+        patientName: currentUser ? currentUser.name : "Patient",
+        reportDate: past.reportDate,
+        healthScore: past.healthScore,
+        aiExplanation: past.aiExplanation || "Reviewing this past report based on historical data.",
+        metrics: past.metrics,
+        recommendations: []
+      };
+      renderAll(pastData);
+      const found = (past.metrics || []).filter(m => m.value !== 'N/A').length;
+      showModeBadge('demo', found);
+      const subText = document.getElementById('headerSubText');
+      if (subText) subText.textContent = `Viewing historic lab results from ${past.reportDate}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   // ──────────────────────────────────────────
   // PDF REPORT DOWNLOAD
   // ──────────────────────────────────────────
-  window.downloadPDF = function() {
+  window.downloadPDF = function () {
     const element = document.body;
-    
+
     const opt = {
-      margin:       [0.5, 0.5, 0.5, 0.5],
-      filename:     `${currentUser ? currentUser.name.replace(/\s+/g, '_') : 'Patient'}_Medical_Report.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, logging: false, windowWidth: 1000 },
-      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
-      pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+      margin: [0.5, 0.5, 0.5, 0.5],
+      filename: `${currentUser ? currentUser.name.replace(/\s+/g, '_') : 'Patient'}_Medical_Report.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, windowWidth: 1000 },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
 
     // Hide interactive UI before print
@@ -575,12 +577,12 @@
     const nav = document.querySelector('.db-nav');
     const actionBtns = document.querySelector('.db-actions');
     const btns = document.querySelectorAll('.btn-back, .btn-print, .btn-secondary, button');
-    
-    if(strip) strip.style.display = 'none';
-    if(chatbot) chatbot.style.display = 'none';
-    if(chatbotTrig) chatbotTrig.style.display = 'none';
-    if(nav) nav.style.display = 'none';
-    if(actionBtns) actionBtns.style.display = 'none';
+
+    if (strip) strip.style.display = 'none';
+    if (chatbot) chatbot.style.display = 'none';
+    if (chatbotTrig) chatbotTrig.style.display = 'none';
+    if (nav) nav.style.display = 'none';
+    if (actionBtns) actionBtns.style.display = 'none';
     btns.forEach(b => b.style.display = 'none');
 
     element.classList.add('pdf-exporting');
@@ -589,11 +591,11 @@
 
     html2pdf().set(opt).from(element).save().then(() => {
       // Restore UI
-      if(strip) strip.style.display = '';
-      if(chatbot) chatbot.style.display = '';
-      if(chatbotTrig) chatbotTrig.style.display = '';
-      if(nav) nav.style.display = '';
-      if(actionBtns) actionBtns.style.display = '';
+      if (strip) strip.style.display = '';
+      if (chatbot) chatbot.style.display = '';
+      if (chatbotTrig) chatbotTrig.style.display = '';
+      if (nav) nav.style.display = '';
+      if (actionBtns) actionBtns.style.display = '';
       btns.forEach(b => b.style.display = '');
       element.style.width = prevWidth;
       element.classList.remove('pdf-exporting');
@@ -607,10 +609,10 @@
     const sec = document.getElementById('aiAndActionSection');
     const typeWrap = document.getElementById('aiTyping');
     if (!sec || !typeWrap) return;
-    
+
     sec.style.display = 'block';
     typeWrap.textContent = '';
-    
+
     let i = 0;
     const speed = 7;
     const interval = setInterval(() => {
@@ -627,35 +629,35 @@
     if (!textEl || !btn) return;
 
     const abnormal = metrics.filter(m => m.status === 'high' || m.status === 'low' || m.status === 'borderline');
-    
+
     if (abnormal.length > 0) {
       const issues = abnormal.map(m => m.name).join(', ');
       textEl.innerHTML = `Based on your out-of-range metrics (<strong>${issues}</strong>), we've generated a 7-day personalized meal plan to help normalize these values.`;
-      
+
       if (display) {
-         display.style.display = 'block';
-         display.innerHTML = '<i>🩺 Generative AI is building your tailored 7-day meal plan...</i>';
-         const prompt = `Based on these out-of-range lab results: ${issues}, generate a helpful, short 7-day meal plan highlighting foods that fix these specific issues. Use standard emojis. Keep it under 150 words.`;
-         
-         fetch(`${API_BASE}/api/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-               question: prompt,
-               context: abnormal
-            })
-         })
-         .then(res => res.json())
-         .then(data => {
-             if (data.success && data.answer) {
-                 display.textContent = data.answer;
-             } else {
-                 display.innerHTML = '<i>Failed to generate meal plan. Please check backend connection.</i>';
-             }
-         })
-         .catch(err => {
-             display.innerHTML = '<i>Error fetching AI Meal Plan via HuggingFace: ' + err.message + '</i>';
-         });
+        display.style.display = 'block';
+        display.innerHTML = '<i>🩺 Generative AI is building your tailored 7-day meal plan...</i>';
+        const prompt = `Based on these out-of-range lab results: ${issues}, generate a helpful, short 7-day meal plan highlighting foods that fix these specific issues. Use standard emojis. Keep it under 150 words.`;
+
+        fetch(`${API_BASE}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question: prompt,
+            context: abnormal
+          })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success && data.answer) {
+              display.textContent = data.answer;
+            } else {
+              display.innerHTML = '<i>Failed to generate meal plan. Please check backend connection.</i>';
+            }
+          })
+          .catch(err => {
+            display.innerHTML = '<i>Error fetching AI Meal Plan via HuggingFace: ' + err.message + '</i>';
+          });
       }
 
       btn.onclick = () => {
@@ -664,7 +666,7 @@
         n.textContent = 'Generative AI is building your tailored Swiggy Instamart basket...';
         document.body.appendChild(n);
         setTimeout(() => n.remove(), 3000);
-        
+
         setTimeout(() => {
           window.open('https://www.swiggy.com/instamart', '_blank');
         }, 1500);
@@ -683,7 +685,7 @@
     activeData = data;
     renderMetricsGrid(data.metrics);
     renderBreakdown(data.metrics);
-    
+
     if (data.aiExplanation) {
       renderAIExplanation(data.aiExplanation);
     }
@@ -701,11 +703,11 @@
   // PDF UPLOAD HANDLER
   // ──────────────────────────────────────────
   function initUpload() {
-    const input     = document.getElementById('pdfUploadInput');
-    const label     = document.getElementById('uploadLabel');
-    const nameEl    = document.getElementById('uploadFilename');
-    const spinner   = document.getElementById('uploadProcessing');
-    const statusEl  = document.getElementById('uploadStatus');
+    const input = document.getElementById('pdfUploadInput');
+    const label = document.getElementById('uploadLabel');
+    const nameEl = document.getElementById('uploadFilename');
+    const spinner = document.getElementById('uploadProcessing');
+    const statusEl = document.getElementById('uploadStatus');
 
     if (!input) return;
 
@@ -867,7 +869,7 @@
           historySec.style.display = 'block';
           historySec.scrollIntoView({ behavior: 'smooth' });
           if (historyPanel && historyPanel.classList.contains('collapsed')) {
-             historyToggleBtn.click();
+            historyToggleBtn.click();
           }
         }
       });
@@ -938,11 +940,11 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-        
+
         const json = await res.json();
-        
+
         chatBody.removeChild(loadingDiv);
-        
+
         if (json.success && json.answer) {
           addMessage(json.answer, 'bot');
         } else {
