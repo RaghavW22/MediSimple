@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cipher Guard — Create Account</title>
+  <title>MediSimple — Create Account</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet" />
   <style>
@@ -390,7 +390,7 @@
   <div class="success-card">
     <div class="success-icon">🎉</div>
     <h2>Account Created!</h2>
-    <p>Welcome to Cipher Guard, <strong id="successName"></strong>!<br/>Your health journey starts now.</p>
+    <p>Welcome to MediSimple, <strong id="successName"></strong>!<br/>Your health journey starts now.</p>
     <a href="login.html" class="btn-go">Go to Sign In →</a>
   </div>
 </div>
@@ -402,7 +402,7 @@
     <div class="brand">
       <div class="brand-icon">🩺</div>
       <div>
-        <div class="brand-name">Cipher Guard</div>
+        <div class="brand-name">MediSimple</div>
         <div class="brand-tag">AI Protection Platform</div>
       </div>
     </div>
@@ -640,7 +640,7 @@ enrollBtn.addEventListener('click', async () => {
 
     const options = {
       publicKey: {
-        rp: { name: "Cipher Guard" },
+        rp: { name: "MediSimple" },
         user: { id: userId, name: emailEl.value, displayName: firstNameEl.value },
         challenge: challenge,
         pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],

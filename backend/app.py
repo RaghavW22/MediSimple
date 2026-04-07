@@ -1,5 +1,5 @@
 # backend/app.py
-# Cipher Guard — Flask API
+# MediSimple — Flask API
 # Accepts PDF uploads, runs pdfplumber text extraction + multi-strategy regex NER,
 # and returns structured metric data to the dashboard.
 
@@ -121,7 +121,7 @@ def handle_file_too_large(_e):
     }), 413
 # ── Fallback demo data ──────────────────────────────────────────────────────
 DUMMY_ANALYSIS = {
-    "patientName": "Cipher Guard User",
+    "patientName": "MediSimple User",
     "reportDate":  "April 2025",
     "healthScore": 72,
     "aiExplanation": (
@@ -275,7 +275,7 @@ def upload_demo():
 # ──────────────────────────────────────────────────────────────────────────────
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({"status": "ok", "service": "Cipher Guard API"})
+    return jsonify({"status": "ok", "service": "MediSimple API"})
 
 
 # ──────────────────────────────────────────────────────────────────────────────

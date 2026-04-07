@@ -1,6 +1,6 @@
 /**
  * js/bio-quests.js
- * Gamification module for MediSimple / Cipher Guard.
+ * Gamification module for MediSimple.
  * Includes the Interactive Health Avatar and Bio-Quests system.
  */
 

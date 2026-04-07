@@ -1,6 +1,6 @@
 /**
  * js/qr-generator.js
- * Modular QR Code Generator for MediSimple / Cipher Guard
+ * Modular QR Code Generator for MediSimple
  * Creates a unique QR code linking to the user's report data.
  */
 
